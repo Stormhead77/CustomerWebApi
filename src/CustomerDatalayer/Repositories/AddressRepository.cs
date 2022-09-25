@@ -56,5 +56,10 @@ namespace CustomerDatalayer.Repositories
         {
             return _context.Addresses.Where(x => x.CustomerID == customerId).ToList();
         }
+
+        public List<Address> ReadAll()
+        {
+            return _context.Addresses.ToList();
+        }
     }
 }

@@ -52,5 +52,10 @@ namespace CustomerDatalayer.Repositories
             _context.Database.ExecuteSqlCommand("DELETE FROM dbo.Addresses");
             return _context.Database.ExecuteSqlCommand("DELETE FROM dbo.Customers");
         }
+
+        public List<Customer> ReadAll()
+        {
+            return _context.Customer.ToList();
+        }
     }
 }

@@ -50,5 +50,10 @@ namespace CustomerDatalayer.Repositories
         {
             return _context.Database.ExecuteSqlCommand("DELETE FROM dbo.CustomerNotes");
         }
+
+        public List<CustomerNote> ReadAll()
+        {
+            return _context.CustomerNotes.ToList();
+        }
     }
 }

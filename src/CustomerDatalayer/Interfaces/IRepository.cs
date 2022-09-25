@@ -7,5 +7,6 @@
         int Update(TEntity entity);
         int Delete(int id);
         int DeleteAll();
+        List<TEntity> ReadAll();
     }
 }
