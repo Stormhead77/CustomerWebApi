@@ -1,118 +1,56 @@
 ﻿using CustomerDatalayer.Entities;
 using CustomerDatalayer.Interfaces;
-using System.Data;
-using System.Data.SqlClient;
+using System.Data.Entity;
 
 namespace CustomerDatalayer.Repositories
 {
-    public class CustomerRepository : BaseRepository<Customer>, IRepository<Customer>
+    public class CustomerRepository : IRepository<Customer>
     {
-        public override string TableName => "Customers";
+        private readonly CustomerDbContext _context;
 
-        public virtual Customer Create(Customer customer)
+        public CustomerRepository()
         {
-            using (var connection = GetConnection())
-            {
-                var command = new SqlCommand(
-                    $"INSERT INTO [{TableName}] (FirstName, LastName, PhoneNumber, Email, TotalPurchasesAmount) " +
-                    "OUTPUT INSERTED.[CustomerId], INSERTED.[FirstName], INSERTED.[LastName], INSERTED.[PhoneNumber], INSERTED.[Email], INSERTED.[TotalPurchasesAmount] " +
-                    "VALUES (@FirstName, @LastName, @PhoneNumber, @Email, @TotalPurchasesAmount)", connection);
-
-                command.Parameters.AddRange(new[] {
-                    new SqlParameter("@FirstName", SqlDbType.NVarChar, 50) { Value = (object?)customer.FirstName ?? DBNull.Value, IsNullable = true },
-                    new SqlParameter("@LastName", SqlDbType.NVarChar, 50) { Value = customer.LastName },
-                    new SqlParameter("@PhoneNumber", SqlDbType.NVarChar, 15) { Value = (object?)customer.PhoneNumber ?? DBNull.Value, IsNullable = true },
-                    new SqlParameter("@Email", SqlDbType.NVarChar, 50) { Value = (object?)customer.Email ?? DBNull.Value, IsNullable = true  },
-                    new SqlParameter("@TotalPurchasesAmount", SqlDbType.Money) { Value = (object?)customer.TotalPurchasesAmount ?? DBNull.Value, IsNullable = true },
-                });
-
-                var reader = command.ExecuteReader();
-                reader.Read();
-
-                return new Customer(reader);
-            }
+            _context = new CustomerDbContext();
         }
 
-        public virtual Customer Read(int customerId)
+        public Customer Create(Customer entity)
         {
-            using (var connection = GetConnection())
-            {
-                var command = new SqlCommand($"SELECT * FROM [{TableName}] WHERE CustomerId = @CustomerId", connection);
+            var createdEntity =
+                _context
+                .Customer
+                .Add(entity);
 
-                command.Parameters.Add(
-                    new SqlParameter("@CustomerId", SqlDbType.Int)
-                    {
-                        Value = customerId
-                    });
+            _context.SaveChanges();
 
-                using (var reader = command.ExecuteReader())
-                {
-                    if (reader.Read())
-                    {
-                        return new Customer(reader);
-                    }
-                }
-            }
-
-            return null;
+            return createdEntity;
         }
 
-        public virtual int Update(Customer customer)
+        public Customer Read(int id)
         {
-            using (var connection = GetConnection())
-            {
-                var command = new SqlCommand(
-                $"UPDATE [{TableName}] " +
-                "SET " +
-                    "FirstName = @FirstName, " +
-                    "LastName = @LastName, " +
-                    "PhoneNumber = @PhoneNumber, " +
-                    "Email = @Email, " +
-                    "TotalPurchasesAmount = @TotalPurchasesAmount " +
-                "WHERE CustomerId = @CustomerId", connection);
-
-                command.Parameters.AddRange(new[] {
-                    new SqlParameter("@FirstName", SqlDbType.NVarChar, 50) { Value = (object?)customer.FirstName ?? DBNull.Value, IsNullable = true },
-                    new SqlParameter("@LastName", SqlDbType.NVarChar, 50) { Value = customer.LastName },
-                    new SqlParameter("@PhoneNumber", SqlDbType.NVarChar, 15) { Value = (object?)customer.PhoneNumber ?? DBNull.Value, IsNullable = true },
-                    new SqlParameter("@Email", SqlDbType.NVarChar, 50) { Value = (object?)customer.Email ?? DBNull.Value, IsNullable = true  },
-                    new SqlParameter("@TotalPurchasesAmount", SqlDbType.Money) { Value = (object?)customer.TotalPurchasesAmount ?? DBNull.Value, IsNullable = true },
-                    new SqlParameter("@CustomerId", SqlDbType.Int) { Value = customer.Id }
-                });
-
-                return command.ExecuteNonQuery();
-            }
+            return _context
+                .Customer
+                .FirstOrDefault(x => x.CustomerID == id);
         }
 
-        public virtual int Delete(int customerId)
+        public int Update(Customer entity)
         {
-            using (var connection = GetConnection())
-            {
-                var command = new SqlCommand($"DELETE FROM [CustomerNotes] WHERE CustomerId = @CustomerId", connection);
-                command.Parameters.Add(new SqlParameter("@CustomerId", SqlDbType.Int) { Value = customerId });
-                command.ExecuteNonQuery();
+            _context.Entry(entity).State = EntityState.Modified;
 
-                command.CommandText = $"DELETE FROM [Addresses] WHERE CustomerId = @CustomerId";
-                command.ExecuteNonQuery();
-
-                command.CommandText = $"DELETE FROM [{TableName}] WHERE CustomerId = @CustomerId";
-                return command.ExecuteNonQuery();
-            }
+            return _context.SaveChanges();
         }
 
-        public void DeleteAll()
+        public int Delete(int id)
         {
-            using (var connection = GetConnection())
-            {
-                var command = new SqlCommand("DELETE FROM [CustomerNotes]", connection);
-                command.ExecuteNonQuery();
+            _context.Customer.Remove(Read(id));
 
-                command.CommandText = "DELETE FROM [Addresses]";
-                command.ExecuteNonQuery();
+            return _context.SaveChanges();
+        }
 
-                command.CommandText = $"DELETE FROM [{TableName}]";
-                command.ExecuteNonQuery();
-            }
+        public int DeleteAll()
+        {
+            _context.Database.ExecuteSqlCommand("DELETE FROM dbo.CustomerNotes");
+            _context.Database.ExecuteSqlCommand("DELETE FROM dbo.Addresses");
+            return _context.Database.ExecuteSqlCommand("DELETE FROM dbo.Customers");
         }
     }
 }

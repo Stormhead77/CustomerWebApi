@@ -1,74 +1,72 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Data.SqlClient;
+﻿using System.Data.Entity;
 
 namespace CustomerDatalayer.Repositories
 {
-    public abstract class BaseRepository<TEntity>
+    public class BaseRepository<TEntity> : DbContext where TEntity : class
     {
-        public abstract string TableName { get; }
+        private IDbSet<TEntity> Table { get; }
 
-        public static SqlConnection GetConnection()
+        public BaseRepository()
+            : base("Server=localhost;Database=CustomerLib_Tolstykh;Trusted_Connection=True")
+        { }
+
+        public TEntity Create(TEntity entity)
         {
-            var conn = new SqlConnection("Server=localhost;Database=CustomerLib_Tolstykh;Trusted_Connection=True;");
-            conn.Open();
+            var createdEntity = Table.Add(entity);
 
-            return conn;
+            SaveChanges();
+
+            return createdEntity;
         }
 
-        private static TEntity GetTEntityInstance(SqlDataReader reader)
+        //public TEntity Read(int id)
+        //{
+        //    return Table.FirstOrDefault(x => x.Id == addressId);
+        //}
+
+        public int Update(TEntity entity)
         {
-            return (TEntity)Activator.CreateInstance(typeof(TEntity), reader);
+            Entry(entity).State = EntityState.Modified;
+
+            return SaveChanges();
+
         }
 
-        public virtual List<TEntity> GetAll()
+        public int Delete(TEntity entity)
         {
-            using (var connection = GetConnection())
+            Table.Remove(entity);
+
+            return SaveChanges();
+        }
+
+        public int DeleteAll()
+        {
+            var qwe = new CustomerDbContext();
+
+            foreach (var entity in qwe.Addresses)
             {
-                var command = new SqlCommand(
-                    $"SELECT * " +
-                    $"FROM [{TableName}]", connection);
-                var reader = command.ExecuteReader();
-
-                var res = new List<TEntity>();
-                while (reader.Read())
-                    res.Add(GetTEntityInstance(reader));
-
-                return res;
+                qwe.Addresses.Remove(entity);
             }
+
+            return SaveChanges();
         }
 
-        public List<TEntity> GetPage(int pageSize, int pageNumber, params string[] orderColumns)
+        public List<TEntity> ReadAll()
         {
-            using (var connection = GetConnection())
-            {
-                var command = new SqlCommand(
-                    $"SELECT * " +
-                    $"FROM [{TableName}] " +
-                    $"ORDER BY {string.Join(",", orderColumns)} " +
-                    $"OFFSET {pageSize * (pageNumber - 1)} ROWS " +
-                    $"FETCH FIRST {pageSize} ROWS ONLY", connection);
-                var reader = command.ExecuteReader();
+            return Table.ToList();
+        }
 
-                var customers = new List<TEntity>();
-                while (reader.Read())
-                    customers.Add(GetTEntityInstance(reader));
-
-                return customers;
-            }
+        public List<TEntity> GetPage(int pageSize, int pageNumber)
+        {
+            return Table
+                .Skip(pageSize * (pageNumber - 1))
+                .Take(pageSize)
+                .ToList();
         }
 
         public int GetCount()
         {
-            using (var connection = GetConnection())
-            {
-                var command = new SqlCommand(
-                    $"SELECT COUNT(*)" +
-                    $"FROM [{TableName}]", connection);
-                var count = (int)command.ExecuteScalar();
-
-                return count;
-            }
+            return Table.Count();
         }
     }
 }

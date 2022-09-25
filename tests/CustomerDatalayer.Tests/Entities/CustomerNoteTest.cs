@@ -9,12 +9,12 @@ namespace CustomerDatalayer.Tests.Entities
         {
             var note = new CustomerNote
             {
-                CustomerId = 1,
+                CustomerID = 1,
                 NoteText = "text"
             };
 
             Assert.NotNull(note);
-            Assert.Equal(1, note.CustomerId);
+            Assert.Equal(1, note.CustomerID);
             Assert.Equal("text", note.NoteText);
         }
     }
