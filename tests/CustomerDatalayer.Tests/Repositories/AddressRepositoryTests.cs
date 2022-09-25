@@ -1,7 +1,6 @@
 ﻿using CustomerDatalayer.Entities;
 using CustomerDatalayer.Interfaces;
 using CustomerDatalayer.Repositories;
-using CustomerDatalayer.Tests.Entities;
 using FluentAssertions;
 
 namespace CustomerDatalayer.Tests.Repositories
@@ -36,7 +35,7 @@ namespace CustomerDatalayer.Tests.Repositories
             createdAddress.Should().NotBeNull();
             createdAddress.AddressLine.Should().Be(address.AddressLine);
             createdAddress.AddressLine2.Should().Be(address.AddressLine2);
-            createdAddress.Type.Should().Be(address.Type);
+            createdAddress.AddressType.Should().Be(address.AddressType);
             createdAddress.City.Should().Be(address.City);
             createdAddress.PostalCode.Should().Be(address.PostalCode);
             createdAddress.State.Should().Be(address.State);
@@ -53,12 +52,12 @@ namespace CustomerDatalayer.Tests.Repositories
             var customer = AddressesRepositoryFixture.GetAddress();
 
             var createdAddress = repository.Create(customer);
-            var readAddress = repository.Read(createdAddress.Id);
+            var readAddress = repository.Read(createdAddress.AddressID);
 
             readAddress.Should().NotBeNull();
             readAddress.AddressLine.Should().Be(customer.AddressLine);
             readAddress.AddressLine2.Should().Be(customer.AddressLine2);
-            readAddress.Type.Should().Be(customer.Type);
+            readAddress.AddressType.Should().Be(customer.AddressType);
             readAddress.City.Should().Be(customer.City);
             readAddress.PostalCode.Should().Be(customer.PostalCode);
             createdAddress.State.Should().Be(customer.State);
@@ -90,34 +89,16 @@ namespace CustomerDatalayer.Tests.Repositories
             createdAddress.AddressLine = "addressLine";
             repository.Update(createdAddress);
 
-            var updatedAddress = repository.Read(createdAddress.Id);
+            var updatedAddress = repository.Read(createdAddress.AddressID);
 
             updatedAddress.Should().NotBeNull();
             updatedAddress.AddressLine.Should().Be("addressLine");
             updatedAddress.AddressLine2.Should().Be(createdAddress.AddressLine2);
-            updatedAddress.Type.Should().Be(createdAddress.Type);
+            updatedAddress.AddressType.Should().Be(createdAddress.AddressType);
             updatedAddress.City.Should().Be(createdAddress.City);
             updatedAddress.PostalCode.Should().Be(createdAddress.PostalCode);
             createdAddress.State.Should().Be(customer.State);
             createdAddress.Country.Should().Be(customer.Country);
-        }
-
-        [Fact]
-        public void ShouldNotBeAbleToUpdateAddress()
-        {
-            AddressesRepositoryFixture.DeleteAll();
-
-            var repository = new AddressRepository();
-
-            var customer = AddressesRepositoryFixture.GetAddress();
-
-            var createdAddress = repository.Create(customer);
-
-            createdAddress.Id = 0;
-            createdAddress.AddressLine = "Garry";
-            var updatedAddresses = repository.Update(createdAddress);
-
-            updatedAddresses.Should().Be(0);
         }
 
         [Fact]
@@ -131,25 +112,9 @@ namespace CustomerDatalayer.Tests.Repositories
 
             var createdAddress = repository.Create(customer);
 
-            var deletedRows = repository.Delete(createdAddress.Id);
+            var deletedRows = repository.Delete(createdAddress.AddressID);
 
             deletedRows.Should().Be(1);
-        }
-
-        [Fact]
-        public void ShouldNotBeAbleToDeleteAddress()
-        {
-            AddressesRepositoryFixture.DeleteAll();
-
-            var repository = new AddressRepository();
-
-            var customer = AddressesRepositoryFixture.GetAddress();
-
-            repository.Create(customer);
-
-            var deletedRows = repository.Delete(0);
-
-            deletedRows.Should().Be(0);
         }
 
         [Fact]
@@ -163,9 +128,40 @@ namespace CustomerDatalayer.Tests.Repositories
 
             repository.Create(address);
 
-            var list = repository.GetAddressesByCustomerId(address.CustomerId);
+            var list = repository.GetAddressesByCustomerId(address.CustomerID);
 
             list.Should().HaveCount(1);
+        }
+    }
+
+    public static class AddressesRepositoryFixture
+    {
+        public static void DeleteAll()
+        {
+            var repository = new AddressRepository();
+            repository.DeleteAll();
+        }
+
+        public static Address GetAddress()
+        {
+            //CustomersRepositoryFixture.DeleteAll();
+            var repository = new CustomerRepository();
+            var customer = CustomersRepositoryFixture.GetCustomer();
+            var createdCustomer = repository.Create(customer);
+
+            var address = new Address
+            {
+                CustomerID = createdCustomer.CustomerID,
+                AddressLine = "4100 Holly Street",
+                AddressLine2 = "4101 Holly Street",
+                AddressType = "Billing",
+                City = "Blue Ridge",
+                PostalCode = "30513",
+                State = "GA",
+                Country = "United States"
+            };
+
+            return address;
         }
     }
 }

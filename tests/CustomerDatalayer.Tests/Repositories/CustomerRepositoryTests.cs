@@ -1,7 +1,6 @@
 ﻿using CustomerDatalayer.Entities;
 using CustomerDatalayer.Interfaces;
 using CustomerDatalayer.Repositories;
-using CustomerDatalayer.Tests.Entities;
 using FluentAssertions;
 
 namespace CustomerDatalayer.Tests.Repositories
@@ -20,8 +19,6 @@ namespace CustomerDatalayer.Tests.Repositories
         {
             var repository = new CustomerRepository();
             repository.GetType().GetInterfaces().Should().Contain((typeof(IRepository<Customer>)));
-
-            //IRepository<Customer> repository = new CustomerRepository();
         }
 
         [Fact]
@@ -53,7 +50,7 @@ namespace CustomerDatalayer.Tests.Repositories
             var customer = CustomersRepositoryFixture.GetCustomer();
 
             var createdCustomer = repository.Create(customer);
-            var readCustomer = repository.Read(createdCustomer.Id);
+            var readCustomer = repository.Read(createdCustomer.CustomerID);
 
             readCustomer.Should().NotBeNull();
             readCustomer.FirstName.Should().Be(customer.FirstName);
@@ -88,7 +85,7 @@ namespace CustomerDatalayer.Tests.Repositories
             createdCustomer.FirstName = "Garry";
             repository.Update(createdCustomer);
 
-            var updatedCustomer = repository.Read(createdCustomer.Id);
+            var updatedCustomer = repository.Read(createdCustomer.CustomerID);
 
             updatedCustomer.Should().NotBeNull();
             updatedCustomer.FirstName.Should().Be("Garry");
@@ -96,24 +93,6 @@ namespace CustomerDatalayer.Tests.Repositories
             updatedCustomer.PhoneNumber.Should().Be(createdCustomer.PhoneNumber);
             updatedCustomer.Email.Should().Be(createdCustomer.Email);
             updatedCustomer.TotalPurchasesAmount.Should().Be(createdCustomer.TotalPurchasesAmount);
-        }
-
-        [Fact]
-        public void ShouldNotBeAbleToUpdateCustomer()
-        {
-            CustomersRepositoryFixture.DeleteAll();
-
-            var repository = new CustomerRepository();
-
-            var customer = CustomersRepositoryFixture.GetCustomer();
-
-            var createdCustomer = repository.Create(customer);
-
-            createdCustomer.Id = 0;
-            createdCustomer.FirstName = "Garry";
-            int updatedCustomers = repository.Update(createdCustomer);
-
-            updatedCustomers.Should().Be(0);
         }
 
         [Fact]
@@ -127,69 +106,32 @@ namespace CustomerDatalayer.Tests.Repositories
 
             var createdCustomer = repository.Create(customer);
 
-            int deletedRows = repository.Delete(createdCustomer.Id);
+            var deletedRows = repository.Delete(createdCustomer.CustomerID);
 
             deletedRows.Should().Be(1);
         }
+    }
 
-        [Fact]
-        public void ShouldNotBeAbleToDeleteCustomer()
+    public static class CustomersRepositoryFixture
+    {
+        public static void DeleteAll()
         {
-            CustomersRepositoryFixture.DeleteAll();
-
             var repository = new CustomerRepository();
-
-            var customer = CustomersRepositoryFixture.GetCustomer();
-
-            repository.Create(customer);
-
-            int deletedRows = repository.Delete(0);
-
-            deletedRows.Should().Be(0);
+            repository.DeleteAll();
         }
 
-        [Fact]
-        public void ShouldNotBeAbleToDeleteAll()
+        public static Customer GetCustomer()
         {
-            var repository = new CustomerRepository();
+            var customer = new Customer
+            {
+                FirstName = "Harold",
+                LastName = "Johnson",
+                PhoneNumber = "+12673935933",
+                Email = "HaroldSJohnson@armyspy.com",
+                TotalPurchasesAmount = 0
+            };
 
-            repository.DeleteAll();
-
-            var count = repository.GetCount();
-
-            count.Should().Be(0);
-        }
-
-        [Fact]
-        public void ShouldBeAbleToGetAll()
-        {
-            var repository = new CustomerRepository();
-
-            repository.DeleteAll();
-
-            var customer = CustomersRepositoryFixture.GetCustomer();
-
-            repository.Create(customer);
-
-            var customers = repository.GetAll();
-
-            customers.Should().HaveCount(1);
-        }
-
-        [Fact]
-        public void ShouldBeAbleToGetPage()
-        {
-            var repository = new CustomerRepository();
-
-            repository.DeleteAll();
-
-            var customer = CustomersRepositoryFixture.GetCustomer();
-
-            repository.Create(customer);
-
-            var customers = repository.GetPage(2, 1, "CustomerID");
-
-            customers.Should().HaveCount(1);
+            return customer;
         }
     }
 }

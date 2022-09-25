@@ -1,94 +1,54 @@
 ﻿using CustomerDatalayer.Entities;
 using CustomerDatalayer.Interfaces;
-using System.Data;
-using System.Data.SqlClient;
+using System.Data.Entity;
 
 namespace CustomerDatalayer.Repositories
 {
-    public class CustomerNoteRepository : BaseRepository<CustomerNote>, IRepository<CustomerNote>
+    public class CustomerNoteRepository : IRepository<CustomerNote>
     {
-        public override string TableName => "CustomerNotes";
+        private readonly CustomerDbContext _context;
 
-        public CustomerNote Create(CustomerNote address)
+        public CustomerNoteRepository()
         {
-            using (var connection = GetConnection())
-            {
-                SqlCommand command = new SqlCommand(
-                    $"INSERT INTO [{TableName}] (CustomerId, NoteText) " +
-                    "OUTPUT INSERTED.[CustomerId], INSERTED.[NoteText] " +
-                    "VALUES (@CustomerId, @NoteText)", connection);
-
-                command.Parameters.AddRange(new[] {
-                    new SqlParameter("@CustomerId", SqlDbType.Int) { Value = address.CustomerId },
-                    new SqlParameter("@NoteText", SqlDbType.NVarChar, 100) { Value = address.NoteText },
-                });
-
-                var reader = command.ExecuteReader();
-                reader.Read();
-
-                return new CustomerNote(reader);
-            }
+            _context = new CustomerDbContext();
         }
 
-        public CustomerNote Read(int addressId)
+        public CustomerNote Create(CustomerNote entity)
         {
-            using (var connection = GetConnection())
-            {
-                SqlCommand command = new SqlCommand($"SELECT * FROM [{TableName}] WHERE CustomerId = @CustomerId", connection);
+            var createdEntity =
+                _context
+                    .CustomerNotes
+                    .Add(entity);
 
-                command.Parameters.Add(new SqlParameter("@CustomerId", SqlDbType.Int) { Value = addressId });
+            _context.SaveChanges();
 
-                using (SqlDataReader reader = command.ExecuteReader())
-                {
-                    if (reader.Read())
-                    {
-                        return new CustomerNote(reader);
-                    }
-                }
-            }
-
-            return null;
+            return createdEntity;
         }
 
-        public int Update(CustomerNote address)
+        public CustomerNote Read(int id)
         {
-            using (var connection = GetConnection())
-            {
-                SqlCommand command = new SqlCommand(
-                $"UPDATE [{TableName}] " +
-                "SET " +
-                    "CustomerId = @CustomerId, " +
-                    "NoteText = @NoteText " +
-                "WHERE CustomerId = @CustomerId", connection);
-
-                command.Parameters.AddRange(new[] {
-                    new SqlParameter("@CustomerId", SqlDbType.Int) { Value = address.CustomerId },
-                    new SqlParameter("@NoteText", SqlDbType.NVarChar, 100) { Value = address.NoteText },
-                });
-
-                return command.ExecuteNonQuery();
-            }
+            return _context
+                .CustomerNotes
+                .FirstOrDefault(x => x.CustomerID == id);
         }
 
-        public int Delete(int customerId)
+        public int Update(CustomerNote entity)
         {
-            using (var connection = GetConnection())
-            {
-                SqlCommand command = new SqlCommand($"DELETE FROM [{TableName}] WHERE CustomerId = @CustomerId", connection);
+            _context.Entry(entity).State = EntityState.Modified;
 
-                command.Parameters.Add(new SqlParameter("@CustomerId", SqlDbType.Int) { Value = customerId });
-
-                return command.ExecuteNonQuery();
-            }
+            return _context.SaveChanges();
         }
 
-        public void DeleteAll()
+        public int Delete(int id)
         {
-            using (var connection = GetConnection())
-            {
-                var command = new SqlCommand($"DELETE FROM [{TableName}]", connection);
-                command.ExecuteNonQuery();
-            }
+            _context.CustomerNotes.Remove(Read(id));
+
+            return _context.SaveChanges();
+        }
+
+        public int DeleteAll()
+        {
+            return _context.Database.ExecuteSqlCommand("DELETE FROM dbo.CustomerNotes");
         }
     }
 }

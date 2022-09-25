@@ -9,7 +9,7 @@ namespace CustomerDatalayer.Tests.Repositories
     public class CustomerNoteRepositoryTests
     {
         [Fact]
-        public void ShouldBeAbleToCreateAddressRepository()
+        public void ShouldBeAbleToCreateCustomerNoteRepository()
         {
             CustomerNoteRepository repository = new CustomerNoteRepository();
             repository.Should().NotBeNull();
@@ -23,40 +23,40 @@ namespace CustomerDatalayer.Tests.Repositories
         }
 
         [Fact]
-        public void ShouldBeAbleToCreateAddress()
+        public void ShouldBeAbleToCreateCustomerNote()
         {
             CustomerNotesRepositoryFixture.DeleteAll();
 
             CustomerNoteRepository repository = new CustomerNoteRepository();
 
-            var note = CustomerNotesRepositoryFixture.GetAddress();
+            var note = CustomerNotesRepositoryFixture.GetCustomerNote();
 
             var createdNote = repository.Create(note);
 
             createdNote.Should().NotBeNull();
-            createdNote.CustomerId.Should().Be(note.CustomerId);
+            createdNote.CustomerID.Should().Be(note.CustomerID);
             createdNote.NoteText.Should().Be(note.NoteText);
         }
 
         [Fact]
-        public void ShouldBeAbleToReadAddress()
+        public void ShouldBeAbleToReadCustomerNote()
         {
             CustomerNotesRepositoryFixture.DeleteAll();
 
             CustomerNoteRepository repository = new CustomerNoteRepository();
 
-            var note = CustomerNotesRepositoryFixture.GetAddress();
+            var note = CustomerNotesRepositoryFixture.GetCustomerNote();
 
             var createdNote = repository.Create(note);
-            var readNote = repository.Read(createdNote.CustomerId);
+            var readNote = repository.Read(createdNote.CustomerID);
 
             readNote.Should().NotBeNull();
-            createdNote.CustomerId.Should().Be(note.CustomerId);
+            createdNote.CustomerID.Should().Be(note.CustomerID);
             createdNote.NoteText.Should().Be(note.NoteText);
         }
 
         [Fact]
-        public void ShouldNotBeAbleToReadAddress()
+        public void ShouldNotBeAbleToReadCustomerNote()
         {
             CustomerNotesRepositoryFixture.DeleteAll();
 
@@ -67,75 +67,65 @@ namespace CustomerDatalayer.Tests.Repositories
         }
 
         [Fact]
-        public void ShouldBeAbleToUpdateAddress()
+        public void ShouldBeAbleToUpdateCustomerNote()
         {
             CustomerNotesRepositoryFixture.DeleteAll();
 
             CustomerNoteRepository repository = new CustomerNoteRepository();
 
-            var note = CustomerNotesRepositoryFixture.GetAddress();
+            var note = CustomerNotesRepositoryFixture.GetCustomerNote();
 
             var createdNote = repository.Create(note);
 
             createdNote.NoteText = "addressLine";
             repository.Update(createdNote);
 
-            var updatedNote = repository.Read(createdNote.CustomerId);
+            var updatedNote = repository.Read(createdNote.CustomerID);
 
             updatedNote.Should().NotBeNull();
-            createdNote.CustomerId.Should().Be(note.CustomerId);
+            createdNote.CustomerID.Should().Be(note.CustomerID);
             createdNote.NoteText.Should().Be("addressLine");
         }
 
         [Fact]
-        public void ShouldNotBeAbleToUpdateAddress()
+        public void ShouldBeAbleToDeleteCustomerNote()
         {
             CustomerNotesRepositoryFixture.DeleteAll();
 
             CustomerNoteRepository repository = new CustomerNoteRepository();
 
-            var customer = CustomerNotesRepositoryFixture.GetAddress();
+            var customer = CustomerNotesRepositoryFixture.GetCustomerNote();
 
             var createdNote = repository.Create(customer);
 
-            createdNote.CustomerId = 0;
-            createdNote.NoteText = "Garry";
-            int updatedNote = repository.Update(createdNote);
-
-            updatedNote.Should().Be(0);
-        }
-
-        [Fact]
-        public void ShouldBeAbleToDeleteAddress()
-        {
-            CustomerNotesRepositoryFixture.DeleteAll();
-
-            CustomerNoteRepository repository = new CustomerNoteRepository();
-
-            var customer = CustomerNotesRepositoryFixture.GetAddress();
-
-            var createdNote = repository.Create(customer);
-
-            int deletedRows = repository.Delete(createdNote.CustomerId);
+            int deletedRows = repository.Delete(createdNote.CustomerID);
 
             deletedRows.Should().Be(1);
         }
+    }
 
-        [Fact]
-        public void ShouldNotBeAbleToDeleteAddress()
+    public static class CustomerNotesRepositoryFixture
+    {
+        public static void DeleteAll()
         {
-            CustomerNotesRepositoryFixture.DeleteAll();
-
             CustomerNoteRepository repository = new CustomerNoteRepository();
-
-            var customer = CustomerNotesRepositoryFixture.GetAddress();
-
-            repository.Create(customer);
-
-            int deletedRows = repository.Delete(0);
-
-            deletedRows.Should().Be(0);
+            repository.DeleteAll();
         }
 
+        public static CustomerNote GetCustomerNote()
+        {
+            //CustomersRepositoryFixture.DeleteAll();
+            CustomerRepository repository = new CustomerRepository();
+            var customer = CustomersRepositoryFixture.GetCustomer();
+            var createdCustomer = repository.Create(customer);
+
+            var address = new CustomerNote
+            {
+                CustomerID = createdCustomer.CustomerID,
+                NoteText = "text"
+            };
+
+            return address;
+        }
     }
 }
